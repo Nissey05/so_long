@@ -13,7 +13,8 @@
 #ifndef SO_LONGH
 # define SO_LONGH
 
-# include <MLX42.h>
+# include "../MLX42/include/MLX42/MLX42.h"
+# include "../Include/so_long.h"
 
 typedef struct		s_entity
 {

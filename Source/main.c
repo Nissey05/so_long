@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <MLX42.h>
-#include <so_long.h>
+#include "../MLX42/include/MLX42/MLX42.h"
+#include "../Include/so_long.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -92,6 +92,12 @@
 int main(void)
 {
 	t_game *game;
+	mlx_image_t* image;
 
 	game->mlx = mlx_init(WIDTH, HEIGHT, "game", true);
+	image = mlx_new_image(game->mlx, 128, 128);
+	mlx_image_to_window(game->mlx, image, 0, 0);
+	mlx_loop(game->mlx);
+	mlx_terminate(game->mlx);
+	return (EXIT_SUCCESS);
 }
