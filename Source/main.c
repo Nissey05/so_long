@@ -92,11 +92,16 @@
 int main(void)
 {
 	t_game *game;
+	mlx_t* mlx;
 	mlx_image_t* image;
 
-	game->mlx = mlx_init(WIDTH, HEIGHT, "game", true);
+	if(!(game->mlx = mlx_init(WIDTH, HEIGHT, "game", true)))
+		printf("ERROR 1\n");
 	image = mlx_new_image(game->mlx, 128, 128);
-	mlx_image_to_window(game->mlx, image, 0, 0);
+	if(!image)
+		printf("ERROR 2\n");
+	if (mlx_image_to_window(game->mlx, image, 0, 0) == -1)
+		printf("ERROR 3\n");
 	mlx_loop(game->mlx);
 	mlx_terminate(game->mlx);
 	return (EXIT_SUCCESS);

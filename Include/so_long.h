@@ -23,17 +23,17 @@ typedef struct		s_entity
 
 typedef struct		s_game
 {
-	mlx_t *mlx;
-	t_entity **entities;
-	int x;
-	int y;
+	mlx_t			*mlx;
+	t_entity		**entities;
+	int				width;
+	int				height;
 }					t_game;
 
 typedef struct		s_player
 {
-	int	x;
-	int	y;
-	mlx_image_t *image;
+	int			x;
+	int			y;
+	mlx_image_t	*image;
 
 }					t_player;
 
