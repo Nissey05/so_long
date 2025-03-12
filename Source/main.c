@@ -7,88 +7,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "../MLX42/include/MLX42/MLX42.h"
 #include "../Include/so_long.h"
 
-#define WIDTH 10
-#define HEIGHT 5
-#define TILE_SIZE 128
-
-static mlx_image_t* imagery;
-
-//// -----------------------------------------------------------------------------
-
-//int32_t ft_pixel(int32_t r, int32_t g, int32_t b, int32_t a)
-//{
-//    return (r << 24 | g << 16 | b << 8 | a);
-//}
-
-//void ft_randomize(void* param)
-//{
-//	(void)param;
-//	for (uint32_t i = 0; i < image->width; ++i)
-//	{
-//		for (uint32_t y = 0; y < image->height; ++y)
-//		{
-//			uint32_t color = ft_pixel(
-//				rand() % 0xFF, // R
-//				rand() % 0xFF, // G
-//				rand() % 0xFF, // B
-//				rand() % 0xFF  // A
-//			);
-//			mlx_put_pixel(image, i, y, color);
-//		}
-//	}
-//}
-
-void ft_hook(void* param)
-{
-	mlx_t* mlx = param;
-
-	if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
-		mlx_close_window(mlx);
-	if (mlx_is_key_down(mlx, MLX_KEY_UP))
-		imagery->instances[0].y -= 2.5;
-	if (mlx_is_key_down(mlx, MLX_KEY_DOWN))
-		imagery->instances[0].y += 2.5;
-	if (mlx_is_key_down(mlx, MLX_KEY_LEFT))
-		imagery->instances[0].x -= 2.5;
-	if (mlx_is_key_down(mlx, MLX_KEY_RIGHT))
-		imagery->instances[0].x += 2.5;
-}
-
-//// -----------------------------------------------------------------------------
-
-//int32_t main(void)
-//{
-//	mlx_t* mlx;
-
-//	// Gotta error check this stuff
-//	if (!(mlx = mlx_init(WIDTH, HEIGHT, "MLX42", true)))
-//	{
-//		puts(mlx_strerror(mlx_errno));
-//		return(EXIT_FAILURE);
-//	}
-//	if (!(image = mlx_new_image(mlx, 128, 128)))
-//	{
-//		mlx_close_window(mlx);
-//		puts(mlx_strerror(mlx_errno));
-//		return(EXIT_FAILURE);
-//	}
-//	if (mlx_image_to_window(mlx, image, 0, 0) == -1)
-//	{
-//		mlx_close_window(mlx);
-//		puts(mlx_strerror(mlx_errno));
-//		return(EXIT_FAILURE);
-//	}
-	
-//	mlx_loop_hook(mlx, ft_randomize, mlx);
-//	mlx_loop_hook(mlx, ft_hook, mlx);
-
-//	mlx_loop(mlx);
-//	mlx_terminate(mlx);
-//	return (EXIT_SUCCESS);
-//}
+#define WIDTH 14
+#define HEIGHT 9
+#define TILE_SIZE 64
 
 void print_map(t_game *game)
 {
@@ -97,33 +22,91 @@ void print_map(t_game *game)
 	printf("\n");
 }
 
-char **get_map(char *input)
+char **get_map(char *input, t_game *game)
 {
-	int fd;
-	int i;
-	char **ret;
+	int		fd;
+	int		i;
+	char	**ret;
+	char	*line;
 	
 	fd = open(input, O_RDONLY);
 	i = 0;
-	ret = (char **)ft_calloc(sizeof(char *), HEIGHT);
+	ret = (char **)ft_calloc(sizeof(char *), game->height);
 	while(ret[i] = get_next_line(fd))
 		i++;
+	close(fd);
 	return (ret);
 }
 
-void movement_hook(void *param)
+mlx_image_t *png_to_image(const char *path, t_game *game)
+{
+	mlx_texture_t	*texture;
+	mlx_image_t		*ret;
+
+	texture = mlx_load_png(path);
+	ret = mlx_texture_to_image(game->mlx, texture);
+	mlx_delete_texture(texture);
+	if (ret)
+			mlx_resize_image(ret, TILE_SIZE, TILE_SIZE);
+	return (ret);
+}
+
+int check_wall(t_game *game, char *way)
+{
+	
+	if (way == "up")
+		if (game->input_map[(game->player->y) - 1][(game->player->x)] != WALL)
+			return (1);
+	if (way == "down")
+		if (game->input_map[game->player->y + 1][(game->player->x)] != WALL)
+			return (1);
+	if (way == "left")
+		if (game->input_map[game->player->y][(game->player->x) - 1] != WALL)
+			return (1);
+	if (way == "right")
+		if (game->input_map[game->player->y][(game->player->x) + 1] != WALL)
+			return (1);
+	return (0);
+}
+
+void move(t_game *game, int way, char axis)
+{
+	if (game->input_map[game->player->y][game->player->x] != EXIT)
+		mlx_image_to_window(game->mlx, game->floor_image, game->player->x * TILE_SIZE, game->player->y * TILE_SIZE);
+	else
+		mlx_image_to_window(game->mlx, game->map[game->player->y][game->player->x].image, game->player->x * TILE_SIZE, game->player->y * TILE_SIZE);
+	if (axis == 'x')
+		game->player->x += way;
+	else
+		game->player->y += way;
+	if (game->input_map[game->player->y][game->player->x] == COLLECT)
+		{
+			game->collected++;
+			game->input_map[game->player->y][game->player->x] = EMPTY;
+		}
+	if (game->input_map[game->player->y][game->player->x] == EXIT)
+		{
+			if (game->collected == 0)
+				mlx_close_window(game->mlx);
+		}
+	mlx_image_to_window(game->mlx, game->player->image, game->player->x * TILE_SIZE, game->player->y * TILE_SIZE);
+}
+
+void movement_hook(mlx_key_data_t keydata, void *param)
 {
 	t_game *game;
 
+
 	game = param;
-	if(mlx_is_key_down(game->mlx, MLX_KEY_W))
-		game->player->y += TILE_SIZE;
-	if(mlx_is_key_down(game->mlx, MLX_KEY_A))
-		game->player->x -= TILE_SIZE;
-	if(mlx_is_key_down(game->mlx, MLX_KEY_S))
-		game->player->y -= TILE_SIZE;
-	if(mlx_is_key_down(game->mlx, MLX_KEY_D))
-		game->player->x += TILE_SIZE;
+	printf("x: %i, y: %i, collected: %i\n", game->player->x, game->player->y, game->collected);
+	if(mlx_is_key_down(game->mlx, MLX_KEY_W) && check_wall(game, "up"))
+		move(game, -1, 'y');
+	if(mlx_is_key_down(game->mlx, MLX_KEY_A) && check_wall(game, "left"))
+		move(game, -1, 'x');
+	if(mlx_is_key_down(game->mlx, MLX_KEY_S) && check_wall(game, "down"))
+		move(game, 1, 'y');
+	if(mlx_is_key_down(game->mlx, MLX_KEY_D) && check_wall(game, "right"))
+		move(game, 1, 'x');
 	if (mlx_is_key_down(game->mlx, MLX_KEY_ESCAPE))
 		mlx_close_window(game->mlx);
 }
@@ -140,10 +123,10 @@ t_player *init_player(t_game *game)
 	mlx_delete_texture(player->texture);
 	mlx_resize_image(player->image, TILE_SIZE, TILE_SIZE);
 	y = 0;
-	while(y < HEIGHT)
+	while(y < game->height)
 	{
 		x = 0;
-		while (x < WIDTH)
+		while (x < game->width)
 		{
 			if (game->input_map[y][x] == PLAYER)
 			{
@@ -165,22 +148,18 @@ t_entity init_entity(t_game *game, int y, int x)
 	t_entity entity;
 
 	if (game->input_map[y][x] == WALL)
-		entity.texture = mlx_load_png("images/wall.png");
+		entity.image = png_to_image("images/wall.png", game);
 	else if (game->input_map[y][x] == EMPTY || game->input_map[y][x] == PLAYER)
-		entity.texture = mlx_load_png("images/empty_space.png");
+		entity.image = png_to_image("images/empty_space.png", game);
 	else if (game->input_map[y][x] == COLLECT)
-		entity.texture = mlx_load_png("images/collectible.png");
-	else if (game->input_map[y][x] == EXIT)
-		entity.texture = mlx_load_png("images/exit.png");
-	else if (game->input_map[y][x] == FLOOD)
-		entity.texture = mlx_load_png("images/flood.png");
-	if(entity.texture)
 	{
-		entity.image = mlx_texture_to_image(game->mlx, entity.texture);
-		mlx_delete_texture(entity.texture);
-		if (entity.image)
-			mlx_resize_image(entity.image, TILE_SIZE, TILE_SIZE);
+		entity.image = png_to_image("images/collectible.png", game);
+		game->collected--;
 	}
+	else if (game->input_map[y][x] == EXIT)
+		entity.image = png_to_image("images/exit.png", game);
+	else if (game->input_map[y][x] == FLOOD)
+		entity.image = png_to_image("images/flood.png", game);
 	return (entity);
 }
 
@@ -189,18 +168,19 @@ t_game *init_game(int argc, char *argv, t_game *game)
 	int x;
 	int y;
 
-	game->map = (t_entity **)ft_calloc(sizeof(t_entity *), HEIGHT);
+	game->collected = 0;
+	game->map = (t_entity **)ft_calloc(sizeof(t_entity *), game->height);
 		if (!game->map)
 			return (NULL);
 	y = 0;
-	game->input_map = get_map(argv);
-	while (y < HEIGHT)
+	game->input_map = get_map(argv, game);
+	while (y < game->height)
 	{
-		game->map[y] = (t_entity *)ft_calloc(sizeof(t_entity), WIDTH);
+		game->map[y] = (t_entity *)ft_calloc(sizeof(t_entity), game->width);
 		if (!game->map)
 			return (NULL);
 		x = 0;
-		while (x < WIDTH)
+		while (x < game->width)
 		{
 			game->map[y][x] = init_entity(game, y, x);
 			if (game->map[y][x].image)
@@ -209,6 +189,7 @@ t_game *init_game(int argc, char *argv, t_game *game)
 		}
 		y++;
 	}
+	game->floor_image = png_to_image("images/empty_space.png", game);
 	game->player = init_player(game);
 	return (game);
 }
@@ -219,16 +200,55 @@ void draw_to_window(t_game *game)
 	int y;
 
 	y = 0;
-	while (y < HEIGHT)
+	while (y < game->height)
 	{
 		x = 0;
-		while (x < WIDTH)
+		while (x < game->width)
 		{
 			mlx_image_to_window(game->mlx, game->map[y][x].image, x * TILE_SIZE, y * TILE_SIZE);
 			x++;
 		}
 		y++;
 	}
+}
+
+int	check_rect(char *input, t_game *game)
+{
+	int		fd;
+	int		i;
+	int		nl;
+	char	*line;
+	
+	fd = open(input, O_RDONLY);
+	i = 0;
+	line = get_next_line(fd);
+	game->width = (int)ft_strlen(line) - 2;
+	printf("game->width: %i\n", game->width);
+	free(line);
+	while(line = get_next_line(fd))
+	{
+		nl = 0;
+		printf("(int)ft_strlen(line) - 2: %i\n", (int)ft_strlen(line) - 2);
+		if (line[ft_strlen(line) - 1] == '\n')
+			nl = 1;
+		if (game->width != (int)ft_strlen(line) - 2)
+		{
+			if (!nl)
+			{
+				if (game->width != (int)ft_strlen(line))
+					return (0);
+			}
+			else
+				return (0);	
+		}
+		i++;
+		free(line);
+	}
+	if (nl)
+		return (0);
+	game->height = i + 1;
+	close(fd);
+	return (1);
 }
 
 int main(int argc, char **argv)
@@ -239,7 +259,14 @@ int main(int argc, char **argv)
 	if (argc < 2 || argc > 2)
 		return (printf("no inputs\n"), -1);
 	game = (t_game *)malloc(sizeof(t_game));
-	if(!(game->mlx = mlx_init(WIDTH * TILE_SIZE, HEIGHT * TILE_SIZE, "so_long", true)))
+	if (!check_rect(argv[1], game))
+	{
+		printf("not rectangle\n");
+		free(game);
+		return (EXIT_FAILURE);
+	}
+	printf("width: %i height: %i\n", game->width, game->height);
+	if(!(game->mlx = mlx_init(game->width * TILE_SIZE, game->height * TILE_SIZE, "so_long", true)))
 	{
 		printf("mlx_init fail\n");
 		free(game);
@@ -251,26 +278,8 @@ int main(int argc, char **argv)
 		printf("init_game fail\n");
 		return (EXIT_FAILURE);
 	}
-	//draw_to_window(game);
-	//if(!image)
-	//	printf("ERROR 2\n");
-	mlx_loop_hook(game->mlx, movement_hook, game);
+	mlx_key_hook(game->mlx, movement_hook, game);
 	mlx_loop(game->mlx);
 	mlx_terminate(game->mlx);
 	return (EXIT_SUCCESS);
 }
-
-//int main(void)
-//{
-//	mlx_t *mlx;
-//	mlx_image_t *image;
-//	mlx_texture_t *texture;
-//	mlx = mlx_init(WIDTH * TILE_SIZE, HEIGHT * TILE_SIZE, "so_long", true);
-//	texture = mlx_load_png("images/wall.png");
-//	image = mlx_texture_to_image(mlx, texture);
-//	//mlx_delete_texture(texture);
-//	mlx_image_to_window(mlx, image, 0, 0);
-//	mlx_loop(mlx);
-//	mlx_terminate(mlx);
-//	return (EXIT_SUCCESS);
-//}

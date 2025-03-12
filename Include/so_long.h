@@ -27,7 +27,6 @@
 
 typedef struct		s_entity
 {
-	mlx_texture_t	*texture;
 	mlx_image_t		*image;
 }					t_entity;
 
@@ -46,6 +45,8 @@ typedef struct		s_game
 	char			**input_map;
 	int				width;
 	int				height;
+	int				collected;
+	mlx_image_t		*floor_image;
 	t_player		*player;
 }					t_game;
 
