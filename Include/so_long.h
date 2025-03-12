@@ -14,27 +14,39 @@
 # define SO_LONGH
 
 # include "../MLX42/include/MLX42/MLX42.h"
-# include "../Include/so_long.h"
+# include "../libft/libft.h"
+
+
+# define EMPTY '0'
+# define WALL '1'
+# define COLLECT 'C'
+# define EXIT 'E'
+# define PLAYER 'P'
+# define FLOOD 'F'
+
 
 typedef struct		s_entity
 {
-	mlx_image_t *image;
+	mlx_texture_t	*texture;
+	mlx_image_t		*image;
 }					t_entity;
+
+typedef struct		s_player
+{
+	int				x;
+	int				y;
+	mlx_image_t		*image;
+	mlx_texture_t 	*texture;
+}					t_player;
 
 typedef struct		s_game
 {
 	mlx_t			*mlx;
-	t_entity		**entities;
+	t_entity		**map;
+	char			**input_map;
 	int				width;
 	int				height;
+	t_player		*player;
 }					t_game;
-
-typedef struct		s_player
-{
-	int			x;
-	int			y;
-	mlx_image_t	*image;
-
-}					t_player;
 
 #endif
