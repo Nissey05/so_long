@@ -171,6 +171,8 @@ t_entity init_entity(t_game *game, int y, int x)
 		entity.image = png_to_image("images/exit.png", game);
 	else if (game->input_map[y][x] == FLOOD)
 		entity.image = png_to_image("images/flood.png", game);
+	else
+		entity.image = NULL;
 	return (entity);
 }
 
@@ -270,24 +272,26 @@ void fill_flood(char **map, int x, int y)
 	}
 }
 
-int check_flood(char **map, int width, int height)
+int count_map(char **map, t_game *game, char item)
 {
 	int x;
 	int y;
+	int count;
 
 	y = 0;
-	while (y < height)
+	count = 0;
+	while (y < game->height)
 	{
 		x = 0;
-		while (x < width)
+		while (x < game->width)
 		{
-			if (map[y][x] == EMPTY)
-				return (0);
+			if (map[y][x] == item)
+				count++;
 			x++;
 		}
 		y++;
 	}
-	return (1);
+	return (count);
 }
 
 int	flood_test(t_game *game)
@@ -305,7 +309,38 @@ int	flood_test(t_game *game)
 	fill_flood(map, game->player->x, game->player->y);
 	print_map(game, game->input_map);
 	print_map(game, map);
-	return (check_flood(map, game->width, game->height));
+	return (count_map(map, game, EMPTY));
+}
+
+int check_all(t_game *game)
+{
+	int x;
+	int y;
+
+	y = 0;
+	while (y < game->height)
+	{
+		x = 0;
+		while (x < game->width)
+		{
+			if (game->input_map[y][x] != EMPTY && game->input_map[y][x] != WALL && game->input_map[y][x] != COLLECT && game->input_map[y][x] != PLAYER && game->input_map[y][x] != EXIT)
+				return (0);
+			x++;
+		}
+		y++;
+	}
+	return (1);
+}
+
+int check_map(t_game *game)
+{
+	if (count_map(game->input_map, game, PLAYER) != 1)
+		return (0);
+	if (count_map(game->input_map, game, COLLECT) < 1)
+		return (0);
+	if (count_map(game->input_map, game, EXIT) != 1)
+		return (0);
+	return (check_all(game));
 }
 
 int main(int argc, char **argv)
@@ -340,9 +375,17 @@ int main(int argc, char **argv)
 		printf("init_game fail\n");
 		return (EXIT_FAILURE);
 	}
-	if (!flood_test(game))
+	if (!check_map(game))
+	{
+		printf("check_map failed\n");
+		mlx_terminate(game->mlx);
+		free(game);
+		return (EXIT_FAILURE);
+	}
+	if (flood_test(game))
 	{
 		printf("flood_test failed\n");
+		mlx_terminate(game->mlx);
 		free(game);
 		return (EXIT_FAILURE);
 	}
