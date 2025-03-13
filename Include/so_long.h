@@ -50,4 +50,6 @@ typedef struct		s_game
 	t_player		*player;
 }					t_game;
 
+int	flood_test(t_game *game);
+
 #endif

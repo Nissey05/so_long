@@ -1,7 +1,14 @@
-// -----------------------------------------------------------------------------
-// Codam Coding College, Amsterdam @ 2022-2023 by W2Wizard.
-// See README in the root project for more information.
-// -----------------------------------------------------------------------------
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nhendrik <nhendrik@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/12 23:10:51 by nhendrik          #+#    #+#             */
+/*   Updated: 2025/03/12 23:10:51 by nhendrik         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,12 +20,12 @@
 
 #define WIDTH 14
 #define HEIGHT 9
-#define TILE_SIZE 64
+#define TILE_SIZE 32
 
-void print_map(t_game *game)
+void print_map(t_game *game, char **map)
 {
-	for (int i = 0; i < 5; i++)
-		printf("%s", game->input_map[i]);
+	for (int i = 0; i < game->height; i++)
+		printf("%s", map[i]);
 	printf("\n");
 }
 
@@ -31,7 +38,9 @@ char **get_map(char *input, t_game *game)
 	
 	fd = open(input, O_RDONLY);
 	i = 0;
-	ret = (char **)ft_calloc(sizeof(char *), game->height);
+	ret = (char **)ft_calloc(game->height + 1, sizeof(char *));
+	if (!ret)
+		return (NULL);
 	while(ret[i] = get_next_line(fd))
 		i++;
 	close(fd);
@@ -101,13 +110,13 @@ void movement_hook(mlx_key_data_t keydata, void *param)
 	printf("x: %i, y: %i, collected: %i\n", game->player->x, game->player->y, game->collected);
 	if(mlx_is_key_down(game->mlx, MLX_KEY_W) && check_wall(game, "up"))
 		move(game, -1, 'y');
-	if(mlx_is_key_down(game->mlx, MLX_KEY_A) && check_wall(game, "left"))
+	else if(mlx_is_key_down(game->mlx, MLX_KEY_A) && check_wall(game, "left"))
 		move(game, -1, 'x');
-	if(mlx_is_key_down(game->mlx, MLX_KEY_S) && check_wall(game, "down"))
+	else if(mlx_is_key_down(game->mlx, MLX_KEY_S) && check_wall(game, "down"))
 		move(game, 1, 'y');
-	if(mlx_is_key_down(game->mlx, MLX_KEY_D) && check_wall(game, "right"))
+	else if(mlx_is_key_down(game->mlx, MLX_KEY_D) && check_wall(game, "right"))
 		move(game, 1, 'x');
-	if (mlx_is_key_down(game->mlx, MLX_KEY_ESCAPE))
+	else if (mlx_is_key_down(game->mlx, MLX_KEY_ESCAPE))
 		mlx_close_window(game->mlx);
 }
 
@@ -117,7 +126,9 @@ t_player *init_player(t_game *game)
 	int y;
 	int x;
 
-	player = (t_player *)ft_calloc(1, sizeof(t_player));
+	player = ft_calloc(sizeof(struct s_player), 1);
+	if (!player)
+		return (NULL);
 	player->texture = mlx_load_png("images/player.png");
 	player->image = mlx_texture_to_image(game->mlx, player->texture);
 	mlx_delete_texture(player->texture);
@@ -169,14 +180,16 @@ t_game *init_game(int argc, char *argv, t_game *game)
 	int y;
 
 	game->collected = 0;
-	game->map = (t_entity **)ft_calloc(sizeof(t_entity *), game->height);
-		if (!game->map)
-			return (NULL);
+	game->map = ft_calloc(game->height, sizeof(struct s_entity *));
+	if (!game->map)
+		return (NULL);
 	y = 0;
 	game->input_map = get_map(argv, game);
+	if (!game->input_map)
+		return (NULL);
 	while (y < game->height)
 	{
-		game->map[y] = (t_entity *)ft_calloc(sizeof(t_entity), game->width);
+		game->map[y] = ft_calloc(game->width, sizeof(struct s_entity));
 		if (!game->map)
 			return (NULL);
 		x = 0;
@@ -191,25 +204,9 @@ t_game *init_game(int argc, char *argv, t_game *game)
 	}
 	game->floor_image = png_to_image("images/empty_space.png", game);
 	game->player = init_player(game);
+	if (!game->player)
+		return (NULL);
 	return (game);
-}
-
-void draw_to_window(t_game *game)
-{
-	int x;
-	int y;
-
-	y = 0;
-	while (y < game->height)
-	{
-		x = 0;
-		while (x < game->width)
-		{
-			mlx_image_to_window(game->mlx, game->map[y][x].image, x * TILE_SIZE, y * TILE_SIZE);
-			x++;
-		}
-		y++;
-	}
 }
 
 int	check_rect(char *input, t_game *game)
@@ -223,12 +220,10 @@ int	check_rect(char *input, t_game *game)
 	i = 0;
 	line = get_next_line(fd);
 	game->width = (int)ft_strlen(line) - 2;
-	printf("game->width: %i\n", game->width);
 	free(line);
 	while(line = get_next_line(fd))
 	{
 		nl = 0;
-		printf("(int)ft_strlen(line) - 2: %i\n", (int)ft_strlen(line) - 2);
 		if (line[ft_strlen(line) - 1] == '\n')
 			nl = 1;
 		if (game->width != (int)ft_strlen(line) - 2)
@@ -251,6 +246,68 @@ int	check_rect(char *input, t_game *game)
 	return (1);
 }
 
+void fill_flood(char **map, int x, int y)
+{
+	if (map[y + 1][x] != WALL && map[y + 1][x] != FLOOD)
+	{
+		map[y + 1][x] = FLOOD;
+		fill_flood(map, x, y + 1);
+	}
+	if (map[y - 1][x] != WALL && map[y - 1][x] != FLOOD)
+	{
+		map[y - 1][x] = FLOOD;
+		fill_flood(map, x, y - 1);
+	}
+	if (map[y][x + 1] != WALL && map[y][x + 1] != FLOOD)
+	{
+		map[y][x + 1] = FLOOD;
+		fill_flood(map, x + 1, y);
+	}
+	if (map[y][x - 1] != WALL && map[y][x - 1] != FLOOD)
+	{
+		map[y][x - 1] = FLOOD;
+		fill_flood(map, x - 1, y);
+	}
+}
+
+int check_flood(char **map, int width, int height)
+{
+	int x;
+	int y;
+
+	y = 0;
+	while (y < height)
+	{
+		x = 0;
+		while (x < width)
+		{
+			if (map[y][x] == EMPTY)
+				return (0);
+			x++;
+		}
+		y++;
+	}
+	return (1);
+}
+
+int	flood_test(t_game *game)
+{
+	char **map;
+	int i;
+
+	i = 0;
+	map = malloc(sizeof(char *) * game->height);
+	while(i < game->height)
+	{
+		map[i] = ft_strdup(game->input_map[i]);
+		i++;
+	}
+	fill_flood(map, game->player->x, game->player->y);
+	print_map(game, game->input_map);
+	print_map(game, map);
+	return (check_flood(map, game->width, game->height));
+}
+
 int main(int argc, char **argv)
 {
 	t_game *game;
@@ -258,7 +315,12 @@ int main(int argc, char **argv)
 
 	if (argc < 2 || argc > 2)
 		return (printf("no inputs\n"), -1);
-	game = (t_game *)malloc(sizeof(t_game));
+	game = malloc(sizeof(struct s_game));
+	if (!game)
+	{
+		printf("malloc game failed\n");
+		return (EXIT_FAILURE);
+	}
 	if (!check_rect(argv[1], game))
 	{
 		printf("not rectangle\n");
@@ -276,6 +338,12 @@ int main(int argc, char **argv)
 	if (!game)
 	{
 		printf("init_game fail\n");
+		return (EXIT_FAILURE);
+	}
+	if (!flood_test(game))
+	{
+		printf("flood_test failed\n");
+		free(game);
 		return (EXIT_FAILURE);
 	}
 	mlx_key_hook(game->mlx, movement_hook, game);
