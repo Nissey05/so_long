@@ -1,6 +1,6 @@
 NAME = so_long
 
-SRC = main.c
+SRC = main.c check.c flood.c map.c move.c init.c mem.c
 SRC_DIR = Source
 
 SRC_COPE = $(SRC:%=$(SRC_DIR)/%)
