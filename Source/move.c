@@ -14,6 +14,7 @@
 
 void	move(t_game *game, int way, char axis)
 {
+	// ft_printf("%c\n", axis);
 	if (game->input_map[game->player->y][game->player->x] != EXIT)
 		mlx_image_to_window(game->mlx, game->floor_image, game->player->x * TILE_SIZE, game->player->y * TILE_SIZE);
 	else

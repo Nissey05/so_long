@@ -46,7 +46,8 @@ int	check_rect(char *input, t_game *game)
 	line = get_next_line(fd);
 	game->width = (int)ft_strlen(line) - 2;
 	free(line);
-	while (line = get_next_line(fd))
+	line = get_next_line(fd);
+	while (line)
 	{
 		nl = 0;
 		if (line[ft_strlen(line) - 1] == '\n')
@@ -63,6 +64,7 @@ int	check_rect(char *input, t_game *game)
 		}
 		i++;
 		free(line);
+		line = get_next_line(fd);
 	}
 	if (nl)
 		return (0);
@@ -102,7 +104,6 @@ int	check_border(char **map, int width, int height)
 	i = 0;
 	while (map[++i])
 	{
-		ft_printf("%c\n", map[i][width - 1]);
 		if (map[i][0] != WALL || map[i][width - 1] != WALL)
 			return (0);
 	}

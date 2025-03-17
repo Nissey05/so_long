@@ -18,12 +18,12 @@
 #include "../MLX42/include/MLX42/MLX42.h"
 #include "../Include/so_long.h"
 
-//void print_map(t_game *game, char **map)
-//{
-//	for (int i = 0; i < game->height; i++)
-//		printf("%s", map[i]);
-//	printf("\n");
-//}
+void print_map(t_game *game, char **map)
+{
+	for (int i = 0; i < game->height; i++)
+		printf("%s", map[i]);
+	printf("\n");
+}
 
 
 int	main(int argc, char **argv)

@@ -14,19 +14,25 @@
 #include "../Include/so_long.h"
 #include <stdlib.h>
 
+void free_matrix(char **map)
+{
+	int i;
+
+	if (!map)
+		return ;
+	i = 0;
+	while (map[i])
+		free(map[i++]);
+	free(map);
+}
+
 void	free_game(t_game *game)
 {
 	int	i;
 
 	if (game->mlx)
 		mlx_terminate(game->mlx);
-	if (game->input_map)
-	{
-		i = -1;
-		while (++i < game->height && game->input_map[i])
-			free(game->input_map[i]);
-		free(game->input_map);
-	}
+	free_matrix(game->input_map);
 	if (game->map)
 	{
 		i = -1;

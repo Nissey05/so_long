@@ -31,8 +31,13 @@ char	**get_map(char *input, t_game *game)
 	ret = (char **)ft_calloc(game->height + 1, sizeof(char *));
 	if (!ret)
 		return (NULL);
-	while (ret[i] = get_next_line(fd))
+	ret[i] = get_next_line(fd);
+	while (ret[i])
+	{
 		i++;
+		ret[i] = get_next_line(fd);
+	}
+		
 	close(fd);
 	return (ret);
 }

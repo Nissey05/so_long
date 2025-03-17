@@ -8,7 +8,7 @@ OBJ = $(SRC:%.c=$(OBJ_DIR)/%.o)
 OBJ_DIR = obj
 
 CC = cc
-CFLAGS = -Iinclude -ldl -lglfw -pthread -lm
+CFLAGS = -Iinclude -pthread
 
 LIBFT_DIR = libft
 LIBFT_LIB = $(LIBFT_DIR)/libft.a
@@ -17,7 +17,7 @@ MLX42_LIB = MLX42/build/libmlx42.a
 all: $(NAME)
 
 $(NAME): $(LIBFT_LIB) $(OBJ)
-	$(CC) $(OBJ) -L. $(LIBFT_LIB) $(MLX42_LIB) $(CFLAGS) -o $(NAME)
+	$(CC) $(OBJ) -L. $(LIBFT_LIB) $(MLX42_LIB) $(CFLAGS) -ldl -lglfw -lm -o $(NAME)
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)

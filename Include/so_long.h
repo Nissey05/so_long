@@ -30,6 +30,15 @@ typedef struct		s_entity
 	mlx_image_t		*image;
 }					t_entity;
 
+typedef struct		s_images
+{
+	mlx_image_t		*empty;
+	mlx_image_t		*wall;
+	mlx_image_t		*collect;
+	mlx_image_t		*exit;
+	mlx_image_t		*flood;
+}					t_images;
+
 typedef struct		s_player
 {
 	int				x;
@@ -42,6 +51,7 @@ typedef struct		s_game
 {
 	mlx_t			*mlx;
 	t_entity		**map;
+	t_images		*images;
 	char			**input_map;
 	int				width;
 	int				height;
@@ -70,7 +80,9 @@ t_game		*init(t_game *game, char **argv, int argc);
 t_game		*init_game(int argc, char *argv, t_game *game);
 t_entity	init_entity(t_game *game, int y, int x);
 t_player	*init_player(t_game *game);
+t_images	*init_images(t_game *game);
 
+void		print_map(t_game *game, char **map);
 void		free_game(t_game *game);
 
 #endif

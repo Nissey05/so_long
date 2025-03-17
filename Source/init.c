@@ -13,6 +13,7 @@
 #include "../Include/so_long.h"
 #include "../MLX42/include/MLX42/MLX42.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 t_game *init(t_game *game, char **argv, int argc)
 {
@@ -39,6 +40,21 @@ t_game *init(t_game *game, char **argv, int argc)
 	return (game);
 }
 
+t_images *init_images(t_game *game)
+{
+	t_images *img;
+
+	img = ft_calloc(1, sizeof(struct s_images *));
+	if (!img)
+		return (NULL);
+	img->empty = png_to_image("images/empty_space.png", game);
+	img->wall = png_to_image("images/wall.png", game);
+	img->collect = png_to_image("images/Collectible.png", game);
+	img->exit = png_to_image("images/Exit.png", game);
+	img->flood = png_to_image("images/Flood.png", game);
+	return (img);
+}
+
 t_game	*init_game(int argc, char *argv, t_game *game)
 {
 	int	x;
@@ -53,14 +69,19 @@ t_game	*init_game(int argc, char *argv, t_game *game)
 	game->input_map = get_map(argv, game);
 	if (!game->input_map)
 		return (NULL);
+	game->images = init_images(game);
+	if (!game->images)
+		return (NULL);
 	while (y < game->height)
 	{
 		game->map[y] = ft_calloc(game->width, sizeof(struct s_entity));
 		if (!game->map)
 			return (NULL);
 		x = 0;
+		printf("%s", game->input_map[y]);
 		while (x < game->width)
 		{
+			// ft_printf("%i\n", x);
 			game->map[y][x] = init_entity(game, y, x);
 			if (game->map[y][x].image)
 				mlx_image_to_window(game->mlx, game->map[y][x].image, x * TILE_SIZE, y * TILE_SIZE);
@@ -68,6 +89,7 @@ t_game	*init_game(int argc, char *argv, t_game *game)
 		}
 		y++;
 	}
+	printf("\n");
 	game->floor_image = png_to_image("images/empty_space.png", game);
 	game->player = init_player(game);
 	if (!game->player)
@@ -80,18 +102,18 @@ t_entity	init_entity(t_game *game, int y, int x)
 	t_entity	entity;
 
 	if (game->input_map[y][x] == WALL)
-		entity.image = png_to_image("images/wall.png", game);
+		entity.image = game->images->wall;
 	else if (game->input_map[y][x] == EMPTY)
-		entity.image = png_to_image("images/empty_space.png", game);
+		entity.image = game->images->empty;
 	else if (game->input_map[y][x] == COLLECT)
 	{
-		entity.image = png_to_image("images/collectible.png", game);
+		entity.image = game->images->collect;
 		game->collected--;
 	}
 	else if (game->input_map[y][x] == EXIT)
-		entity.image = png_to_image("images/exit.png", game);
+		entity.image = game->images->exit;
 	else if (game->input_map[y][x] == FLOOD)
-		entity.image = png_to_image("images/flood.png", game);
+		entity.image = game->images->flood;
 	else
 		entity.image = NULL;
 	return (entity);
